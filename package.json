@@ -1,7 +1,7 @@
 {
-  "name": "testvector-editor",
+  "name": "testvector-viewer",
   "version": "0.1.0",
-  "description": "Test vector editor for the CMS Level-1 Trigger",
+  "description": "Test vector viewer for the CMS Level-1 Trigger",
   "main": "index.js",
   "scripts": {
     "start": "electron ."

@@ -14,10 +14,21 @@ var Muon = {
   ]
 };
 
+var Egamma = {
+  name: "eg",
+  size: 12,
+  mask: 0xffffffff,
+  attributes: [
+    {name: "foo", shift: 0, mask: 0xf},
+    {name: "bar", shift: 7, mask: 0xf},
+  ]
+};
+
 var Format = (function() {
-  var items = [BunchCrossing];
-  for (var i = 0; i < Muon.size; ++i) {
-    items.push(Muon);
-  }
+  var items = [BunchCrossing, Muon, Egamma];
   return items;
 })();
+
+module.exports = {
+  Format
+};

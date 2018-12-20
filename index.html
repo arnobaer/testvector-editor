@@ -2,7 +2,7 @@
 <html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Test Vector Editor</title>
+<title>Test Vector Viewer</title>
 <style>
 body {
   background-color: #222;
@@ -74,14 +74,13 @@ td {
     <p style="padding: 20px;"></p>
   </div>
 
-  <script src="settings.js"></script>
-  <script src="logic.js"></script>
   <script>
     const electron = require('electron');
     const {ipcRenderer} = electron;
+    const {loadTable} = require('./viewer.js');
 
     ipcRenderer.on('item:load', function(e, data) {
-      openFile(data);
+      loadTable(data);
     });
   </script>
 </body>

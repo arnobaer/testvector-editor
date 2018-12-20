@@ -1,6 +1,6 @@
-# testvector-editor
+# testvector-viewer
 
-Electron app for test vector files.
+Electron app for inspecting test vector files.
 
 ## Run
 
