@@ -1,0 +1,22 @@
+{
+  "name": "testvector-editor",
+  "version": "0.1.0",
+  "description": "Test vector editor for the CMS Level-1 Trigger",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arnobaer/testvector-editor.git"
+  },
+  "author": "Bernhard Arnold",
+  "license": "GPL-3.0+",
+  "bugs": {
+    "url": "https://github.com/arnobaer/testvector-editor/issues"
+  },
+  "homepage": "https://github.com/arnobaer/testvector-editor#readme",
+  "dependencies": {
+    "electron": "^3.0.13"
+  }
+}
