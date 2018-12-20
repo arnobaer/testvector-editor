@@ -2,7 +2,7 @@
 
 Electron app for test vector files.
 
-# Run
+## Run
 
 ```bash
 npm install
