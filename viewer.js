@@ -41,33 +41,38 @@ Table.prototype.resizeHeader = function() {
 
 Table.prototype.appendRow = function(values) {
   var tr = document.createElement('tr');
-  var j = 0;
+  var column = 0;
   Format.forEach(function(item) {
     var size = item.size === undefined ? 1 : item.size;
+    var td;
     for (var i = 0; i < size; ++i) {
-      var td = document.createElement('td');
-      td.innerText = values[j];
+      td = document.createElement('td');
+      td.innerText = values[column];
       td.setAttribute('data-name', item.name);
       td.setAttribute('data-index', 0);
       if (item.size !== undefined) {
        td.setAttribute('data-index', i);
       }
       tr.appendChild(td);
+      ++column;
     }
-    ++j;
   });
   this.tbody.appendChild(tr);
 }
 
 var loadTable = function(data) {
-  var lines = data.split("\n");
+  var lines = data.split(/\n\r|\n/gm);
 
+  // Create table
   var table = new Table();
   table.setHeader(Format);
 
-  for (var i = 0; i < lines.length; ++i) {
-    table.appendRow(lines[i].split(" "));
-  }
+  // Fill table with data
+  lines.forEach(function(line) {
+    if (line != '') {
+      table.appendRow(line.split(/\s+/gm));
+    }
+  });
 
   var node = document.getElementById('output');
   node.innerHTML = '';
@@ -76,30 +81,35 @@ var loadTable = function(data) {
   // Update width of table header (required when position: sticky)
   table.resizeHeader()
 
+  function bitmask(width) {
+    return parseInt('1'.repeat(width), 2) ;
+  }
+
   function update(target) {
     var node = document.getElementById('panel');
     var name = target.getAttribute('data-name');
     var index = target.getAttribute('data-index');
-    var value = parseInt(target.innerText, 16);
-    if (name == 'bx') {
-      value = parseInt(target.innerText, 10); // decimal!
-      node.innerHTML = "<p>bunch crossing " + value + "</p>";
-      return;
+    var item = Format.find(function(item) {
+      return item.name == name;
+    });
+    var value = parseInt(target.innerText, item.base);
+    if (index > 1) {
+      node.innerHTML = "<p>" + name + "#" + index + "</p>";
     }
-    if (name == 'muon') {
-      var param;
+    else {
       node.innerHTML = "<p>" + name + "</p>";
-      node.innerHTML += "<p>" + value + "</p>";
-      param = (value >> 7) & 0xf;
-      node.innerHTML += "<p>A: 0x" + param.toString(16) + "</p>";
-      param = (value >> 12) & 0xff;
-      node.innerHTML += "<p>B: 0x" + param.toString(16) + "</p>";
-      param = (value >> 16) & 0xf;
-      node.innerHTML += "<p>C: 0x" + param.toString(16) + "</p>";
-      return;
     }
-    node.innerHTML = "<p>" + value + "</p>";
-    return;
+    node.innerHTML = "<p>" + name + "</p>";
+    node.innerHTML += "<p>" + target.innerText + "</p>";
+    item.attributes.forEach(function(attribute) {
+      var msb = attribute.slice[0];
+      var lsb = attribute.slice[attribute.slice.length - 1];
+      if (msb == lsb) msb += 1;
+      // TODO: BUG: Does not work for 64bit muons !
+      var param = (value >>> lsb) & bitmask(msb - lsb);
+      var slice = attribute.slice.join(':');
+      node.innerHTML += "<p>" + attribute.name + " [" + slice + "]: 0x" + param.toString(16) + "</p>";
+    });
   }
 
   document.addEventListener('click', function(e) {

@@ -38,11 +38,6 @@ const menuTemplate = [
         }
       },
       {
-        label: 'Save As...',
-        accelerator: accel('Ctrl+Shift+S'),
-        click() {}
-      },
-      {
         label: 'Quit',
         accelerator: accel('Ctrl+Q'),
         click() {
