@@ -1,10 +1,9 @@
 # testvector-viewer
 
-Electron app for inspecting test vector files.
+PyQt5 GUI for inspecting L1-trigger test vector files.
 
 ## Run
 
 ```bash
-npm install
-npm start
+python3 viewer.py [file...]
 ```
