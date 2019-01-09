@@ -9,7 +9,7 @@ If PyQt5 is not available you can install it using `pip` in a virtual environmen
 ```bash
 virtualenv -p python3 env
 . env/bin/activate
-(env) pip install pyqt5
+(env) pip install -r requirements.txt
 (env) python testvector-viewer/viewer.py
 ```
 
