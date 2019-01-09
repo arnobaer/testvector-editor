@@ -10,32 +10,6 @@ from testvector import TestVector
 
 __version__ = "1.0.0"
 
-
-# -----------------------------------------------------------------------------
-#  Exceptions.
-# -----------------------------------------------------------------------------
-
-class FileReadError(RuntimeError): pass
-class NoSuchFileError(RuntimeError): pass
-class UnknownFileTypeError(RuntimeError): pass
-
-def exceptionHandler(f):
-    """Function decorator returning a exception handler function."""
-    def _critical(title, *args):
-        QtWidgets.QMessageBox.critical(None, title, " ".join((str(arg) for arg in args)))
-    def _exceptionHandler(*args, **kwargs):
-        try:
-            f(*args, **kwargs)
-        except FileReadError as exception:
-            _critical("Read error", "<strong>Failed to read from file:</strong><br/>", exception)
-        except NoSuchFileError as exception:
-            _critical("No such file", "<strong>No such file to open:</strong><br/>", exception)
-        except UnknownFileTypeError as exception:
-            _critical("Unknown filetype", "<strong>Unknown file type:</strong><br/>", exception)
-        except:
-            raise
-    return _exceptionHandler
-
 # -----------------------------------------------------------------------------
 #  Main window class.
 # -----------------------------------------------------------------------------
@@ -336,7 +310,8 @@ class Document(QtWidgets.QWidget):
         # Get the objects raw value.
         value = current.data(QtCore.Qt.UserRole)
         if value is None: return
-        bx, column, fmt, value = value
+        row, column, fmt, value = value
+        bx = row + 1 # begins with 1
         text = [
             "<p><strong>Object: {}</strong></p>".format(fmt.label()),
             "<p><strong>BX: {}</strong></p>".format(bx),
@@ -407,7 +382,7 @@ class DataTableModel(QtCore.QAbstractTableModel):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             return QtCore.QVariant(self.testvector.formats[col].label())
         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(col)
+            return QtCore.QVariant(col + 1)
         return QtCore.QVariant()
 
 # -----------------------------------------------------------------------------
