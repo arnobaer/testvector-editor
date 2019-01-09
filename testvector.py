@@ -14,16 +14,15 @@ class Attribute:
         return (self.msb - self.lsb) + 1
     @property
     def bitmask(self):
-        return ((1 << self.bitwidth) - 1)
+        return ((1 << self.bitwidth) - 1) << self.lsb
     @property
     def charwidth(self):
         return int(math.ceil(self.bitwidth / 4.))
     def get(self, value):
-        return (value >> self.lsb) & self.bitmask
+        return (value & self.bitmask) >> self.lsb
 
-class ObjectFormat:
+class Format:
     width = 32
-    base = 16
     name = None
     attributes = []
     def __init__(self, index):
@@ -38,7 +37,7 @@ class ObjectFormat:
     def charwidth(self):
         return int(math.ceil(self.width / 4.))
 
-class MuonFormat(ObjectFormat):
+class MuonFormat(Format):
     width = 64
     name = 'muon'
     attributes = [
@@ -52,7 +51,7 @@ class MuonFormat(ObjectFormat):
         Attribute("reserved", [63, 36]),
     ]
 
-class EgammaFormat(ObjectFormat):
+class EgammaFormat(Format):
     name = 'eg'
     attributes = [
         Attribute("et", [8, 0]),
@@ -62,7 +61,7 @@ class EgammaFormat(ObjectFormat):
         Attribute("reserved", [31, 27]),
     ]
 
-class TauFormat(ObjectFormat):
+class TauFormat(Format):
     name = 'tau'
     attributes = [
         Attribute("et", [8, 0]),
@@ -72,7 +71,7 @@ class TauFormat(ObjectFormat):
         Attribute("reserved", [31, 27]),
     ]
 
-class JetFormat(ObjectFormat):
+class JetFormat(Format):
     name = 'jet'
     attributes = [
         Attribute("et", [10, 0]),
@@ -81,7 +80,7 @@ class JetFormat(ObjectFormat):
         Attribute("reserved", [31, 27]),
     ]
 
-class EtFormat(ObjectFormat):
+class EtFormat(Format):
     name = 'et'
     attributes = [
         Attribute("et", [11, 0]),
@@ -89,7 +88,7 @@ class EtFormat(ObjectFormat):
         Attribute("MBT0HFP", [31, 28]),
     ]
 
-class HtFormat(ObjectFormat):
+class HtFormat(Format):
     name = 'ht'
     attributes = [
         Attribute("et", [11, 0]),
@@ -97,7 +96,7 @@ class HtFormat(ObjectFormat):
         Attribute("MBT0HFM", [31, 28]),
     ]
 
-class EtmFormat(ObjectFormat):
+class EtmFormat(Format):
     name = "etm"
     attributes = [
         Attribute("et", [11, 0]),
@@ -106,7 +105,7 @@ class EtmFormat(ObjectFormat):
         Attribute("MBT1HFP", [31, 28]),
     ]
 
-class HtmFormat(ObjectFormat):
+class HtmFormat(Format):
     name = "htm"
     attributes = [
         Attribute("et", [11, 0]),
@@ -115,20 +114,24 @@ class HtmFormat(ObjectFormat):
         Attribute("MBT1HFM", [31, 28]),
     ]
 
-class EmptyFormat(ObjectFormat):
+class EmptyFormat(Format):
     name = "empty"
 
-class ExternalFormat(ObjectFormat):
+def vector_attributes(width):
+    """Returns list of attributes for every bith in width."""
+    return [Attribute(str(i), [i]) for i in range(width)]
+
+class ExternalFormat(Format):
     name = "external"
     width = 256
-    attributes = [Attribute(str(i), [i]) for i in range(width)]
+    attributes = vector_attributes(width)
 
-class AlgorithmsFormat(ObjectFormat):
+class AlgorithmsFormat(Format):
     name = "algorithms"
     width = 512
-    attributes = [Attribute(str(i), [i]) for i in range(width)]
+    attributes = vector_attributes(width)
 
-class FinorFormat(ObjectFormat):
+class FinorFormat(Format):
     name = "finor"
     width = 1
 
