@@ -11,6 +11,31 @@ from testvector import TestVector
 __version__ = "1.0.0"
 
 # -----------------------------------------------------------------------------
+#  Exceptions.
+# -----------------------------------------------------------------------------
+
+class FileReadError(RuntimeError): pass
+class NoSuchFileError(RuntimeError): pass
+class UnknownFileTypeError(RuntimeError): pass
+
+def fileExceptionHandler(f):
+    """Function decorator returning a exception handler function."""
+    def _critical(title, *args):
+        QtWidgets.QMessageBox.critical(None, title, " ".join((str(arg) for arg in args)))
+    def _exceptionHandler(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except FileReadError as exception:
+            _critical("Read error", "<strong>Failed to read from file:</strong><br/>", exception)
+        except NoSuchFileError as exception:
+            _critical("No such file", "<strong>No such file to open:</strong><br/>", exception)
+        except UnknownFileTypeError as exception:
+            _critical("Unknown filetype", "<strong>Unknown file type:</strong><br/>", exception)
+        except:
+            raise
+    return _exceptionHandler
+
+# -----------------------------------------------------------------------------
 #  Main window class.
 # -----------------------------------------------------------------------------
 
@@ -151,6 +176,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "@cern.ch\">&lt;bernhard.arnold@cern.ch&gt;</a></p>".format(self.AppTitle, self.AppVersion)
         )
 
+    @fileExceptionHandler
     def loadDocument(self, filename):
         """Load document from filename."""
         filename = os.path.abspath(filename)
@@ -216,12 +242,12 @@ class Document(QtWidgets.QWidget):
         super(Document, self).__init__(parent)
         self.filename = os.path.abspath(filename)
         self.tableView = self.createTableView()
-        self.previewWidget = self.createPreviewWidget()
+        self.detailsWidget = DetailsWidget(self)
         self.warningLabel = self.createWarningLabel()
         self.reloadCount = 0
         splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         splitter.addWidget(self.tableView)
-        splitter.addWidget(self.previewWidget)
+        splitter.addWidget(self.detailsWidget)
         splitter.setStretchFactor(0, 2)
         splitter.setStretchFactor(1, 1)
         layout = QtWidgets.QVBoxLayout()
@@ -253,12 +279,6 @@ class Document(QtWidgets.QWidget):
         verticalHeader.setDefaultSectionSize(20)
         return tableView
 
-    def createPreviewWidget(self):
-        textEdit = QtWidgets.QTextEdit(self)
-        textEdit.setReadOnly(True)
-        textEdit.setAutoFillBackground(True)
-        return textEdit
-
     def createWarningLabel(self):
         label = QtWidgets.QLabel(self)
         label.setStyleSheet(
@@ -288,7 +308,7 @@ class Document(QtWidgets.QWidget):
         # </hack>
         self.tableView.update()
         # Attach signals to new assigned model instance.
-        self.tableView.selectionModel().currentChanged.connect(self.updatePreview)
+        self.tableView.selectionModel().currentChanged.connect(self.detailsWidget.load)
         self.clearWarning()
         self.reloadCount += 1
 
@@ -302,16 +322,39 @@ class Document(QtWidgets.QWidget):
                 return image
         except IOError:
             raise FileReadError(filename)
-        # If no read attempt succeeded then bil out with an exception.
-        raise UnknownFileTypeError(filename)
+        except:
+            raise UnknownFileTypeError(filename)
 
-    def updatePreview(self, current, previous):
-        """Update the object preview."""
+    def clearWarning(self):
+        """Clear the warning badge located at the top of the document."""
+        self.warningLabel.clear()
+        self.warningLabel.hide()
+
+    def showWarning(self, message):
+        """Show a warning badge displaying a message located at the top of the document."""
+        self.warningLabel.setText(message)
+        self.warningLabel.show()
+
+# -----------------------------------------------------------------------------
+#  Details widget class.
+# -----------------------------------------------------------------------------
+
+class DetailsWidget(QtWidgets.QTextEdit):
+    """Shows object details."""
+
+    def __init__(self, filename, parent = None):
+        super(DetailsWidget, self).__init__(parent)
+        self.setReadOnly(True)
+        self.setAutoFillBackground(True)
+
+    def load(self, current, previous):
+        """Update the object preview. Slot called by QTableModel."""
         # Get the objects raw value.
-        value = current.data(QtCore.Qt.UserRole)
-        if value is None: return
-        row, column, fmt, value = value
-        bx = row + 1 # begins with 1
+        data = current.data(QtCore.Qt.UserRole)
+        if data is None:
+            return
+        fmt, value = data
+        bx = current.row() + 1 # begins with 1
         text = [
             "<p><strong>Object: {}</strong></p>".format(fmt.label()),
             "<p><strong>BX: {}</strong></p>".format(bx),
@@ -323,7 +366,7 @@ class Document(QtWidgets.QWidget):
             table.append("".join([
                 "<tr>",
                 "<td><strong>{0}</strong></td>",
-                "<td>{1}</td>",
+                "<td>{1:d}</td>",
                 "<td>0x{1:x}</td>",
                 "</tr>",
             ]).format(attr.name, attr.get(value)))
@@ -338,17 +381,8 @@ class Document(QtWidgets.QWidget):
             ])
             text.extend(table)
             text.append("</table>")
-        self.previewWidget.setHtml('\n'.join(text))
+        self.setHtml('\n'.join(text))
 
-    def clearWarning(self):
-        """Clear the warning badge located at the top of the document."""
-        self.warningLabel.clear()
-        self.warningLabel.hide()
-
-    def showWarning(self, message):
-        """Show a warning badge displaying a message located at the top of the document."""
-        self.warningLabel.setText(message)
-        self.warningLabel.show()
 
 # -----------------------------------------------------------------------------
 #  Data model
@@ -373,7 +407,7 @@ class DataTableModel(QtCore.QAbstractTableModel):
         fmt = self.testvector.formats[index.column()]
         value = event[index.column()]
         if role == QtCore.Qt.UserRole:
-            return (index.row(), index.column(), fmt, value)
+            return (fmt, value)
         if role == QtCore.Qt.DisplayRole:
             return fmt.format(value)
         return QtCore.QVariant()
